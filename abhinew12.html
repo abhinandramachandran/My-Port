@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aspiring Full Stack Developer | Portfolio</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Poppins for headings, Lato for body -->
+    <link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
+    <!-- Firebase SDK Imports -->
+    <script type="module">
+        // Import necessary Firebase functions from the SDKs
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.0/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.9.0/firebase-auth.js";
+        import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/11.9.0/firebase-firestore.js";
+
+        // Your provided Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyB73RwImfmGhqM5i1z4HVU0ThUoTE3pRcU",
+            authDomain: "my-portfolio-97403.firebaseapp.com",
+            projectId: "my-portfolio-97403",
+            storageBucket: "my-portfolio-97403.firebasestorage.app",
+            messagingSenderId: "365490053226",
+            appId: "1:365490053226:web:a5c5c7bf078cf8004e6a13",
+            measurementId: "G-RKZRB075WV"
+        };
+
+        // Global Canvas environment variables
+        // These are distinct from the firebaseConfig.appId and are used for constructing data paths
+        // according to the Canvas environment's data storage guidelines.
+        const canvasAppId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const canvasInitialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        let app;
+        let auth;
+        let db;
+        let isAuthReady = false; // New flag to indicate Firebase Auth is ready
+
+        // Initialize Firebase with your specific configuration
+        try {
+            app = initializeApp(firebaseConfig);
+            auth = getAuth(app);
+            db = getFirestore(app);
+            console.log("Firebase initialized successfully with provided config.");
+        } catch (error) {
+            console.error("Failed to initialize Firebase:", error);
+            // In a real application, you might show a user-friendly error message here
+        }
+
+        // Use onAuthStateChanged to reliably determine when authentication state is known
+        if (auth) {
+            onAuthStateChanged(auth, async (user) => {
+                if (user) {
+                    // User is signed in (could be anonymous or with custom token)
+                    console.log("Firebase: User is authenticated. UID:", user.uid);
+                    isAuthReady = true; // Set flag to true
+                } else {
+                    // No user is signed in, try to sign in anonymously
+                    console.log("Firebase: No user signed in. Attempting anonymous sign-in...");
+                    try {
+                        if (canvasInitialAuthToken) {
+                            await signInWithCustomToken(auth, canvasInitialAuthToken);
+                            console.log("Firebase: Signed in with custom token from Canvas environment.");
+                        } else {
+                            await signInAnonymously(auth);
+                            console.log("Firebase: Signed in anonymously.");
+                        }
+                        isAuthReady = true; // Set flag to true after successful sign-in
+                    } catch (error) {
+                        console.error("Firebase: Error during anonymous sign-in:", error);
+                        // Even if anonymous sign-in fails, we acknowledge the auth state is determined
+                        isAuthReady = true;
+                    }
+                }
+            });
+        } else {
+            console.error("Firebase Auth service is not initialized. Cannot set up auth state listener.");
+            isAuthReady = true; // Assume ready if auth service itself isn't available to prevent perpetual loading
+        }
+
+
+        // Expose Firebase instances and core functions to the global window object.
+        window.firebaseApp = app;
+        window.firebaseAuth = auth;
+        window.firebaseDb = db;
+        window.addDoc = addDoc;
+        window.collection = collection;
+        window.canvasAppId = canvasAppId;
+        window.getIsAuthReady = () => isAuthReady; // Expose a getter for the auth ready flag
+    </script>
+   <style>
+        /* Base styles for body and fonts */
+        body {
+            font-family: 'Lato', sans-serif;
+            background-color: #0f172a; /* Darker slate background */
+            color: #e2e8f0; /* Light gray text */
+            line-height: 1.8;
+            scroll-behavior: smooth; /* Smooth scrolling for the entire page */
+        }
+
+        h1, h2, h3, h4, h5, h6 {
+            font-family: 'Poppins', sans-serif;
+            color: #cbd5e0; /* Slightly lighter gray for headings */
+        }
+
+        /* Utility for container width */
+        .container {
+            max-width: 1200px;
+            margin-left: auto;
+            margin-right: auto;
+            padding-left: 1.5rem; /* Increased padding */
+            padding-right: 1.5rem;
+        }
+
+        /* Custom scrollbar for a sleek look */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1e293b; /* Darker track */
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #22d3ee; /* Cyan thumb */
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #06b6d4; /* Darker cyan on hover */
+        }
+
+        /* Navbar link transitions */
+        .nav-link {
+            position: relative;
+            padding-bottom: 4px;
+            transition: color 0.3s ease;
+        }
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 2px;
+            background-color: #22d3ee; /* Cyan underline */
+            left: 0;
+            bottom: 0;
+            transition: width 0.3s ease-in-out;
+        }
+        .nav-link:hover::after {
+            width: 100%;
+        }
+
+        /* Basic fade-in animation for sections on scroll */
+        .animate-on-scroll {
+            opacity: 0;
+            transform: translateY(30px); /* Increased initial translation */
+            transition: opacity 0.8s ease-out, transform 0.8s ease-out;
+            transition-delay: var(--delay, 0s); /* Use CSS variable for delay */
+        }
+        .animate-on-scroll.is-visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Project card hover effect */
+        .project-card {
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .project-card:hover {
+            transform: translateY(-10px); /* More pronounced lift */
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5); /* Stronger shadow */
+        }
+
+        /* Project image overlay on hover */
+        .project-card-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(30, 41, 59, 0.9); /* Dark overlay */
+            color: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            padding: 1rem;
+            text-align: center;
+        }
+        .project-card:hover .project-card-overlay {
+            opacity: 1;
+        }
+
+        /* Button styling */
+        .btn-primary {
+            display: inline-block;
+            background-color: #22d3ee; /* Cyan */
+            color: #1a202c; /* Dark text on button */
+            padding: 12px 30px;
+            border-radius: 9999px; /* Fully rounded */
+            font-weight: 700; /* Bolder text */
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            transition: background-color 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
+            box-shadow: 0 5px 15px rgba(34, 211, 238, 0.3); /* Cyan shadow */
+        }
+        .btn-primary:hover {
+            background-color: #06b6d4; /* Darker cyan */
+            transform: translateY(-3px); /* More lift */
+            box-shadow: 0 8px 20px rgba(34, 211, 238, 0.5);
+        }
+
+        /* Contact form styling */
+        .form-input, .form-textarea {
+            background-color: #1e293b; /* Darker input background */
+            border: 1px solid #475569; /* Slate 600 border */
+            color: #e2e8f0; /* Text color */
+            padding: 12px 16px;
+            border-radius: 8px;
+            width: 100%;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+        .form-input:focus, .form-textarea:focus {
+            outline: none;
+            border-color: #22d3ee; /* Highlight on focus with cyan */
+            box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.5); /* Cyan glow */
+        }
+
+        /* Message box styling */
+        #form-status-message {
+            padding: 10px 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            font-weight: 500;
+            opacity: 0;
+            transition: opacity 0.3s ease-in-out;
+            text-align: center;
+        }
+        #form-status-message.show {
+            opacity: 1;
+        }
+        #form-status-message.success {
+            background-color: #166534; /* Green 800 */
+            color: #d1fae5; /* Green 100 */
+        }
+        #form-status-message.error {
+            background-color: #b91c1c; /* Red 800 */
+            color: #fee2e2; /* Red 100 */
+        }
+        #form-status-message.info {
+            background-color: #1d4ed8; /* Blue 800 */
+            color: #bfdbfe; /* Blue 100 */
+        }
+
+        /* Back to top button */
+        #back-to-top {
+            position: fixed;
+            bottom: 30px; /* Slightly higher */
+            right: 30px;
+            background-color: #22d3ee; /* Cyan */
+            color: #1a202c; /* Dark text */
+            padding: 16px; /* Larger padding */
+            border-radius: 50%;
+            display: none;
+            box-shadow: 0 6px 15px rgba(34, 211, 238, 0.4); /* Stronger shadow */
+            transition: background-color 0.3s ease, transform 0.3s ease, opacity 0.3s ease;
+            z-index: 999;
+            opacity: 0;
+        }
+        #back-to-top:hover {
+            background-color: #06b6d4; /* Darker cyan */
+            transform: translateY(-5px) scale(1.1); /* More pronounced lift and scale */
+        }
+        #back-to-top.show {
+            opacity: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Hero Section Text Gradient */
+        .gradient-text {
+            background: linear-gradient(to right, #22d3ee, #a78bfa); /* Cyan to purple */
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* Profile image hover duotone effect */
+        .profile-image-wrapper {
+            position: relative;
+            overflow: hidden;
+            border-radius: 8px; /* Slightly rounded corners for the wrapper */
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .profile-image-wrapper img {
+            filter: grayscale(100%) brightness(80%); /* Initial grayscale */
+            transition: filter 0.5s ease-in-out;
+        }
+        .profile-image-wrapper::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, rgba(34, 211, 238, 0.3), rgba(167, 139, 250, 0.3)); /* Cyan to purple overlay */
+            opacity: 0;
+            transition: opacity 0.5s ease-in-out;
+            pointer-events: none; /* Allows clicks to pass through to the image */
+        }
+        .profile-image-wrapper:hover img {
+            filter: grayscale(0%) brightness(100%); /* Color on hover */
+        }
+        .profile-image-wrapper:hover::before {
+            opacity: 1; /* Show overlay on hover */
+        }
+        .profile-image-wrapper:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        /* Skill card border gradient on hover */
+        .skill-card {
+            position: relative;
+            overflow: hidden;
+            border: 1px solid #1e293b; /* Initial subtle border */
+            transition: border-color 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .skill-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: inherit; /* Inherit border-radius from parent */
+            padding: 2px; /* Controls the thickness of the gradient border */
+            background: linear-gradient(45deg, #22d3ee, #a78bfa); /* Cyan to purple gradient */
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            z-index: -1;
+        }
+        .skill-card:hover::before {
+            opacity: 1;
+        }
+        .skill-card:hover {
+            border-color: transparent; /* Hide original border on hover */
+            transform: translateY(-5px); /* Lift effect */
+            box-shadow: 0 10px 20px rgba(0,0,0,0.4);
+        }
+
+    </style>
+</head>
+<body class="antialiased">
+
+    <!-- Header & Navigation -->
+    <header class="bg-gray-900 shadow-lg py-4 fixed w-full z-20 top-0">
+        <nav class="container flex justify-between items-center">
+            <a href="#hero" class="text-2xl font-bold text-purple-400 hover:text-purple-300 transition duration-300">Abhinand AR</a>
+            <ul class="hidden md:flex space-x-8">
+                <li><a href="#about" class="nav-link text-gray-300 hover:text-white font-medium">About</a></li>
+                <li><a href="#skills" class="nav-link text-gray-300 hover:text-white font-medium">Skills</a></li>
+                <li><a href="#projects" class="nav-link text-gray-300 hover:text-white font-medium">Projects</a></li>
+                <li><a href="#contact" class="nav-link text-gray-300 hover:text-white font-medium">Contact</a></li>
+            </ul>
+            <!-- Mobile Menu Button -->
+            <button id="mobile-menu-button" class="md:hidden text-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-500 rounded-md p-2">
+                <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path>
+                </svg>
+            </button>
+        </nav>
+        <!-- Mobile Menu Overlay -->
+        <div id="mobile-menu" class="hidden md:hidden fixed inset-0 bg-gray-900 bg-opacity-95 z-30 flex flex-col items-center justify-center space-y-10 text-2xl">
+            <button id="close-mobile-menu" class="absolute top-6 right-6 text-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-500 rounded-md p-2">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+            <a href="#about" class="nav-link text-gray-100 hover:text-purple-400" onclick="closeMobileMenu()">About</a>
+            <a href="#skills" class="nav-link text-gray-100 hover:text-purple-400" onclick="closeMobileMenu()">Skills</a>
+            <a href="#projects" class="nav-link text-gray-100 hover:text-purple-400" onclick="closeMobileMenu()">Projects</a>
+            <a href="#contact" class="nav-link text-gray-100 hover:text-purple-400" onclick="closeMobileMenu()">Contact</a>
+        </div>
+    </header>
+
+    <main class="pt-20"> <!-- Padding to account for fixed header -->
+
+        <!-- Hero Section -->
+        <section id="hero" class="relative bg-gradient-to-br from-gray-900 to-gray-800 h-screen flex items-center justify-center text-center px-4 overflow-hidden">
+            <div class="z-10 animate-on-scroll" style="--delay: 0.1s;">
+                <h1 class="text-5xl md:text-7xl font-extrabold leading-tight text-white mb-6">
+                    Hi, I'm <span class="gradient-text">Abhinand AR</span>
+                </h1>
+                <p id="hero-typewriter" class="text-xl md:text-3xl font-light text-gray-300 mb-10 min-h-[3rem] typewriter-text"></p>
+                <a href="#projects" class="btn-primary">Explore My Work</a>
+            </div>
+            <!-- Background Blob/Shape for visual interest -->
+            <div class="absolute w-80 h-80 bg-cyan-600 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-blob top-0 left-0"></div>
+            <div class="absolute w-80 h-80 bg-violet-500 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-blob animation-delay-2000 bottom-0 right-0"></div>
+            <style>
+                @keyframes blob {
+                    0% { transform: translate(0, 0) scale(1); }
+                    33% { transform: translate(30px, -50px) scale(1.1); }
+                    66% { transform: translate(-20px, 20px) scale(0.9); }
+                    100% { transform: translate(0, 0) scale(1); }
+                }
+                .animate-blob {
+                    animation: blob 7s infinite cubic-bezier(0.68, -0.55, 0.27, 1.55);
+                }
+                .animation-delay-2000 { animation-delay: 2s; }
+            </style>
+        </section>
+
+        <!-- About Section -->
+        <section id="about" class="py-20 bg-gray-800">
+            <div class="container flex flex-col md:flex-row items-center gap-12">
+                <div class="md:w-1/2 animate-on-scroll" style="--delay: 0.2s;">
+                    <div class="profile-image-wrapper">
+                       <img src="C:\Users\rama3\Downloads\IMG_20241002_235917_453.jpeg" alt="Aspiring Full Stack Developer Profile" class="w-full h-auto object-cover">
+                    </div>
+                </div>
+                <div class="md:w-1/2 text-left animate-on-scroll" style="--delay: 0.3s;">
+                    <h2 class="text-4xl font-bold text-white mb-6">About Me</h2>
+                    <p class="text-gray-300 mb-6 text-lg">
+                        I am an Aspiring Full Stack Developer eager to learn and grow in the world of web development. I am passionate about understanding how both front-end and back-end systems work together to create seamless user experiences.
+                    </p>
+                    <p class="text-gray-300 text-lg">
+                        My journey into coding recently began with a strong curiosity for how technology shapes our world. I'm currently focusing on building foundational skills in modern web technologies and I'm excited to tackle new challenges and contribute to innovative projects. I believe in continuous learning and hands-on practice.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- Skills Section -->
+        <section id="skills" class="py-20 bg-gray-900">
+            <div class="container text-center">
+                <h2 class="text-4xl font-bold text-white mb-12 animate-on-scroll" style="--delay: 0.1s;">My Foundational Skills</h2>
+                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
+                    <!-- Skill Card 1: HTML/CSS -->
+                    <div class="skill-card bg-gray-800 p-6 rounded-lg shadow-md animate-on-scroll" style="--delay: 0.2s;">
+                        <svg class="w-12 h-12 mx-auto mb-4 text-orange-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M2 12s.5 2 2 3 5 1 7 1 5-1 7-1 2-3 2-3"></path>
+                            <path d="M2 17s.5 2 2 3 5 1 7 1 5-1 7-1 2-3 2-3"></path>
+                            <path d="M2 7s.5 2 2 3 5 1 7 1 5-1 7-1 2-3 2-3"></path>
+                            <path d="M2 22s.5 2 2 3 5 1 7 1 5-1 7-1 2-3 2-3"></path>
+                        </svg>
+                        <h3 class="text-xl font-semibold text-gray-200">HTML & CSS</h3>
+                        <p class="text-gray-400 text-sm">Structure & Styling</p>
+                    </div>
+                    <!-- Skill Card 2: JavaScript -->
+                    <div class="skill-card bg-gray-800 p-6 rounded-lg shadow-md animate-on-scroll" style="--delay: 0.3s;">
+                        <svg class="w-12 h-12 mx-auto mb-4 text-yellow-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="16 18 22 12 16 6"></polyline>
+                            <polyline points="8 6 2 12 8 18"></polyline>
+                        </svg>
+                        <h3 class="text-xl font-semibold text-gray-200">JavaScript</h3>
+                        <p class="text-gray-400 text-sm">Dynamic Content</p>
+                    </div>
+                    <!-- Skill Card 3: Basic React -->
+                    <div class="skill-card bg-gray-800 p-6 rounded-lg shadow-md animate-on-scroll" style="--delay: 0.4s;">
+                        <svg class="w-12 h-12 mx-auto mb-4 text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"></path>
+                            <path d="M9.5 9.5a1.5 1.5 0 100 3 1.5 1.5 0 000-3z"></path>
+                            <path d="M14.5 9.5a1.5 1.5 0 100 3 1.5 1.5 0 000-3z"></path>
+                            <path d="M9.5 14.5a1.5 1.5 0 100 3 1.5 1.5 0 000-3z"></path>
+                            <path d="M14.5 14.5a1.5 1.5 0 100 3 1.5 1.5 0 000-3z"></path>
+                            <path d="M6 12a6 6 0 1012 0 6 6 0 00-12 0z"></path>
+                        </svg>
+                        <h3 class="text-xl font-semibold text-gray-200">React Basics</h3>
+                        <p class="text-gray-400 text-sm">Component-based UI</p>
+                    </div>
+                    <!-- Skill Card 4: Node.js Fundamentals -->
+                    <div class="skill-card bg-gray-800 p-6 rounded-lg shadow-md animate-on-scroll" style="--delay: 0.5s;">
+                        <svg class="w-12 h-12 mx-auto mb-4 text-violet-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"></path>
+                            <path d="M8 12h8"></path>
+                            <path d="M12 8v8"></path>
+                        </svg>
+                        <h3 class="text-xl font-semibold text-gray-200">Node.js Basics</h3>
+                        <p class="text-gray-400 text-sm">Server-side JS</p>
+                    </div>
+                    <!-- Skill Card 5: Databases (SQL/NoSQL) -->
+                    <div class="skill-card bg-gray-800 p-6 rounded-lg shadow-md animate-on-scroll" style="--delay: 0.6s;">
+                        <svg class="w-12 h-12 mx-auto mb-4 text-green-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <ellipse cx="12" cy="5" rx="9" ry="3"></ellipse>
+                            <path d="M3 5V19A9 3 0 0021 19V5"></path>
+                            <path d="M3 12A9 3 0 0021 12"></path>
+                        </svg>
+                        <h3 class="text-xl font-semibold text-gray-200">Databases</h3>
+                        <p class="text-gray-400 text-sm">SQL & NoSQL Intro</p>
+                    </div>
+                    <!-- Skill Card 6: Git/GitHub Basics -->
+                    <div class="skill-card bg-gray-800 p-6 rounded-lg shadow-md animate-on-scroll" style="--delay: 0.7s;">
+                        <svg class="w-12 h-12 mx-auto mb-4 text-red-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 00-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0020 4.77 5.07 5.07 0 0019.91 3s-1.02-.28-3.5 1.34a12.18 12.18 0 00-6 0c-2.48-1.62-3.5-1.34-3.5-1.34A5.07 5.07 0 005 4.77a5.44 5.44 0 00-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 009 18.13V22"></path>
+                        </svg>
+                        <h3 class="text-xl font-semibold text-gray-200">Git & GitHub</h3>
+                        <p class="text-gray-400 text-sm">Version Control Fundamentals</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Projects Section -->
+        <section id="projects" class="py-20 bg-gray-800">
+            <div class="container text-center">
+                <h2 class="text-4xl font-bold text-white mb-12 animate-on-scroll" style="--delay: 0.1s;">My Learning Projects</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
+                    <!-- Project Card 1: Basic Todo App -->
+                    <div class="project-card bg-gray-900 rounded-lg shadow-xl animate-on-scroll" style="--delay: 0.2s;">
+                        <img src="C:\Users\rama3\Downloads\3.png" alt="Project 1 - Todo App" class="w-full h-56 object-cover border-b border-gray-700">
+                        <div class="project-card-overlay">
+                            <h3 class="text-3xl font-bold mb-2">Interactive Todo List</h3>
+                            <p class="text-gray-200 mb-4">A simple web-based todo application.</p>
+                            <a href="#" target="_blank" class="text-cyan-400 hover:text-cyan-300 font-semibold text-lg">View Details &rarr;</a>
+                        </div>
+                        <div class="p-8">
+                            <h3 class="text-2xl font-bold text-purple-400 mb-3">Simple Todo List App</h3>
+                            <p class="text-gray-300 mb-5">A basic web application to manage daily tasks, demonstrating **DOM manipulation** and **event handling** in JavaScript.</p>
+                            <div class="flex flex-wrap gap-2 mb-6 justify-center">
+                                <span class="bg-purple-700 text-purple-100 text-xs px-3 py-1 rounded-full">HTML</span>
+                                <span class="bg-purple-700 text-purple-100 text-xs px-3 py-1 rounded-full">CSS</span>
+                                <span class="bg-purple-700 text-purple-100 text-xs px-3 py-1 rounded-full">JavaScript</span>
+                            </div>
+                            <a href="#" class="btn-primary">View Project</a>
+                        </div>
+                    </div>
+
+                    <!-- Project Card 2: Basic Weather App -->
+                    <div class="project-card bg-gray-900 rounded-lg shadow-xl animate-on-scroll" style="--delay: 0.3s;">
+                        <img src="C:\Users\rama3\Downloads\2.png" alt="Project 2 - Weather App" class="w-full h-56 object-cover border-b border-gray-700">
+                        <div class="project-card-overlay">
+                            <h3 class="text-3xl font-bold mb-2">Real-time Weather Display</h3>
+                            <p class="text-gray-200 mb-4">Fetches weather data from an API.</p>
+                            <a href="#" target="_blank" class="text-cyan-400 hover:text-cyan-300 font-semibold text-lg">View Details &rarr;</a>
+                        </div>
+                        <div class="p-8">
+                            <h3 class="text-2xl font-bold text-purple-400 mb-3">Weather Information App</h3>
+                            <p class="text-gray-300 mb-5">A small application that fetches and displays weather information using a **public API**, practicing **asynchronous JavaScript**.</p>
+                            <div class="flex flex-wrap gap-2 mb-6 justify-center">
+                                <span class="bg-purple-700 text-purple-100 text-xs px-3 py-1 rounded-full">HTML</span>
+                                <span class="bg-purple-700 text-purple-100 text-xs px-3 py-1 rounded-full">CSS</span>
+                                <span class="bg-purple-700 text-purple-100 text-xs px-3 py-1 rounded-full">JavaScript</span>
+                                <span class="bg-purple-700 text-purple-100 text-xs px-3 py-1 rounded-full">API Integration</span>
+                            </div>
+                            <a href="#" class="btn-primary">View Project</a>
+                        </div>
+                    </div>
+                    <!-- Project Card 3: Game Review App (Placeholder) -->
+                    <div class="project-card bg-gray-900 rounded-lg shadow-xl animate-on-scroll" style="--delay: 0.4s;">
+                        <img src="C:\Users\rama3\Downloads\1.jpg" alt="Project 3 - Game Review App" class="w-full h-56 object-cover border-b border-gray-700">
+                        <div class="project-card-overlay">
+                            <h3 class="text-3xl font-bold mb-2">Game Review Platform</h3>
+                            <p class="text-gray-200 mb-4">A simple web-based game review application.</p>
+                            <a href="int.html" target="_blank" class="text-cyan-400 hover:text-cyan-300 font-semibold text-lg">View Details &rarr;</a>
+                        </div>
+                        <div class="p-8">
+                            <h3 class="text-2xl font-bold text-purple-400 mb-3">Game Review App</h3>
+                            <p class="text-gray-300 mb-5">A basic game application and web-based game review platform, demonstrating fundamental web development concepts.</p>
+                            <div class="flex flex-wrap gap-2 mb-6 justify-center">
+                                <span class="bg-purple-700 text-purple-100 text-xs px-3 py-1 rounded-full">HTML</span>
+                                <span class="bg-purple-700 text-purple-100 text-xs px-3 py-1 rounded-full">CSS</span>
+                                <span class="bg-purple-700 text-purple-100 text-xs px-3 py-1 rounded-full">JavaScript</span>
+                            </div>
+                            <a href="#" class="btn-primary">View Project</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Contact Section -->
+        <section id="contact" class="py-20 bg-gray-900">
+            <div class="container text-center">
+                <h2 class="text-4xl font-bold text-white mb-12 animate-on-scroll" style="--delay: 0.1s;">Let's Connect</h2>
+                <div class="max-w-2xl mx-auto bg-gray-800 p-8 rounded-lg shadow-xl animate-on-scroll" style="--delay: 0.2s;">
+                    <p class="text-gray-300 mb-8 text-lg">
+                        I'm always eager to learn and collaborate on new projects. Feel free to send me a message!
+                    </p>
+                    <form id="contact-form" class="space-y-6 text-left">
+                        <div>
+                            <label for="contact-name" class="block text-gray-300 text-sm font-semibold mb-2">Name</label>
+                            <input type="text" id="contact-name" name="name" class="form-input" placeholder="Your Name" required>
+                        </div>
+                        <div>
+                            <label for="contact-email" class="block text-gray-300 text-sm font-semibold mb-2">Email</label>
+                            <input type="email" id="contact-email" name="email" class="form-input" placeholder="your@email.com" required>
+                        </div>
+                        <div>
+                            <label for="contact-message" class="block text-gray-300 text-sm font-semibold mb-2">Message</label>
+                            <textarea id="contact-message" name="message" rows="6" class="form-textarea" placeholder="Your message..." required></textarea>
+                        </div>
+                        <div class="text-center">
+                            <button type="submit" class="btn-primary">Send Message</button>
+                        </div>
+                    </form>
+                    <div id="form-status-message" class="mt-6 text-center text-sm font-medium hidden"></div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-900 py-8 text-center text-gray-500 border-t border-gray-700">
+        <div class="container">
+            <p>&copy; 2025 Aspiring Full Stack Developer. All rights reserved.</p>
+            <div class="flex justify-center space-x-6 mt-4 text-xl">
+                <!-- LinkedIn Icon -->
+                <a href="#" target="_blank" class="text-gray-400 hover:text-cyan-400 transition-colors duration-300" aria-label="LinkedIn">
+                    <svg fill="currentColor" viewBox="0 0 24 24" class="w-6 h-6"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.761 0 5-2.239 5-5v-14c0-2.761-2.239-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/></svg>
+                </a>
+                <!-- GitHub Icon -->
+                <a href="#" target="_blank" class="text-gray-400 hover:text-cyan-400 transition-colors duration-300" aria-label="GitHub">
+                    <svg fill="currentColor" viewBox="0 0 24 24" class="w-6 h-6"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.084-.74-.084-.725.076-.713 1.29.092 1.956 1.322 1.956 1.322 1.144 1.958 3.027 1.392 3.753 1.065.116-.829.453-1.392.828-1.712-2.872-.325-5.899-1.442-5.899-6.425 0-1.416.516-2.573 1.371-3.483-.13-.324-.562-1.644.11-3.443 0 0 1.116-.347 3.66.105 1.05-.292 2.162-.438 3.303-.443 1.141.005 2.253.151 3.303.443 2.545-.452 3.659.105 3.659.105.672 1.799.24 3.119.12 3.443.856.91 1.371 2.066 1.371 3.483 0 4.991-3.032 6.1-5.92 6.416.429.366.815 1.092.815 2.203v3.253c0 .316.192.694.797.576c4.765-1.589 8.197-6.086 8.197-11.385c0-6.627-5.373-12-12-12z"/></svg>
+                </a>
+                <!-- Twitter Icon -->
+                <a href="#" target="_blank" class="text-gray-400 hover:text-cyan-400 transition-colors duration-300" aria-label="Twitter">
+                    <svg fill="currentColor" viewBox="0 0 24 24" class="w-6 h-6"><path d="M24 4.557c-.883.392-1.832.656-2.828.775 1.017-.609 1.798-1.574 2.165-2.724-.951.564-2.005.974-3.127 1.195-.897-.957-2.178-1.555-3.594-1.555-3.484 0-6.326 2.898-6.326 6.474 0 .507.054.995.152 1.465-5.264-.263-9.94-2.809-13.063-6.674-.543.937-.858 2.035-.858 3.227 0 2.126 1.085 3.991 2.738 5.107-.803-.025-1.56-.248-2.228-.616v.081c0 3.18 2.261 5.867 5.26 6.465-.552.152-1.137.237-1.738.237-.424 0-.834-.041-1.234-.117.834 2.65 3.253 4.57 6.128 4.629-2.204 1.765-4.998 2.817-8.033 2.817-.525 0-1.04-.031-1.547-.093 3.018 1.912 6.594 3.029 10.463 3.029 12.553 0 19.429-10.456 19.429-19.686 0-.317-.01-.633-.025-.945.899-.638 1.689-1.442 2.317-2.368z"/></svg>
+                </a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Back to Top Button -->
+    <button id="back-to-top" title="Back to Top">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M5 10l7-7m0 0l7 7m-7-7v18" />
+        </svg>
+    </button>
+
+    <script>
+        // Mobile Menu Toggle
+        const mobileMenuButton = document.getElementById('mobile-menu-button');
+        const closeMobileMenuButton = document.getElementById('close-mobile-menu');
+        const mobileMenu = document.getElementById('mobile-menu');
+
+        mobileMenuButton.addEventListener('click', () => {
+            mobileMenu.classList.remove('hidden');
+            mobileMenu.classList.add('flex');
+        });
+
+        closeMobileMenuButton.addEventListener('click', () => {
+            mobileMenu.classList.add('hidden');
+            mobileMenu.classList.remove('flex');
+        });
+
+        function closeMobileMenu() {
+            mobileMenu.classList.add('hidden');
+            mobileMenu.classList.remove('flex');
+        }
+
+        // Animate on Scroll
+        const animateOnScrollElements = document.querySelectorAll('.animate-on-scroll');
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('is-visible');
+                    // Optional: Unobserve after animation to prevent re-triggering
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, {
+            threshold: 0.1 // Trigger when 10% of the element is visible
+        });
+
+        animateOnScrollElements.forEach(element => {
+            observer.observe(element);
+        });
+
+        // Back to Top Button Logic
+        const backToTopButton = document.getElementById('back-to-top');
+
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 300) { // Show button after scrolling 300px
+                backToTopButton.classList.add('show');
+            } else {
+                backToTopButton.classList.remove('show');
+            }
+        });
+
+        backToTopButton.addEventListener('click', () => {
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth' // Smooth scroll to top
+            });
+        });
+
+        // Hero Section Typewriter Effect
+        const typewriterElement = document.getElementById('hero-typewriter');
+        const phrases = [
+            "A passionate Full Stack Developer.",
+            "Building dynamic web experiences.",
+            "Eager to learn and innovate.",
+            "Crafting clean and efficient code."
+        ];
+        let phraseIndex = 0;
+        let charIndex = 0;
+        let isDeleting = false;
+        let typingSpeed = 100;
+        let delayBetweenPhrases = 1500;
+
+        function typeWriter() {
+            const currentPhrase = phrases[phraseIndex];
+
+            if (isDeleting) {
+                // Deleting text
+                typewriterElement.textContent = currentPhrase.substring(0, charIndex - 1);
+                charIndex--;
+            } else {
+                // Typing text
+                typewriterElement.textContent = currentPhrase.substring(0, charIndex + 1);
+                charIndex++;
+            }
+
+            if (!isDeleting && charIndex === currentPhrase.length) {
+                // End of typing, start deleting after a delay
+                typingSpeed = delayBetweenPhrases;
+                isDeleting = true;
+            } else if (isDeleting && charIndex === 0) {
+                // End of deleting, move to next phrase
+                isDeleting = false;
+                phraseIndex = (phraseIndex + 1) % phrases.length;
+                typingSpeed = 100; // Reset typing speed
+            } else {
+                // Continue typing or deleting
+                typingSpeed = isDeleting ? 50 : 100; // Faster deleting
+            }
+
+            setTimeout(typeWriter, typingSpeed);
+        }
+
+        // Start the typewriter effect when the page loads
+        document.addEventListener('DOMContentLoaded', typeWriter);
+
+        // Contact Form Submission (Firebase Integration)
+        const contactForm = document.getElementById('contact-form');
+        const formStatusMessage = document.getElementById('form-status-message');
+
+        contactForm.addEventListener('submit', async function(event) {
+            event.preventDefault(); // Prevent default form submission
+
+            // Check if Firebase Auth is ready before attempting submission
+            if (!window.getIsAuthReady()) {
+                console.error("Firebase Auth is not yet ready. Please wait or try again.");
+                formStatusMessage.classList.remove('hidden', 'success', 'info');
+                formStatusMessage.classList.add('show', 'error');
+                formStatusMessage.textContent = 'Firebase is still loading. Please wait a moment or try refreshing the page.';
+                setTimeout(() => {
+                    formStatusMessage.classList.remove('show');
+                    formStatusMessage.classList.add('hidden');
+                }, 5000);
+                return; // Stop function execution if Firebase is not ready
+            }
+
+            // Display a "sending" message to the user
+            formStatusMessage.classList.remove('hidden', 'success', 'error');
+            formStatusMessage.classList.add('show', 'info');
+            formStatusMessage.textContent = 'Sending message...';
+
+            // Retrieve form input values
+            const name = document.getElementById('contact-name').value;
+            const email = document.getElementById('contact-email').value;
+            const message = document.getElementById('contact-message').value;
+
+            try {
+                // Ensure firebaseDb and canvasAppId are available globally after initialization
+                if (!window.firebaseDb || !window.canvasAppId) {
+                    throw new Error("Firebase Firestore or Canvas App ID not available.");
+                }
+
+                // Add the contact message to the 'contact_messages' collection in Firestore.
+                // The path uses `window.canvasAppId` to ensure data is stored within your application's
+                // designated public artifacts space, compatible with Firebase security rules.
+                await window.addDoc(window.collection(window.firebaseDb, `artifacts/${window.canvasAppId}/public/data/contact_messages`), {
+                    name: name,
+                    email: email,
+                    message: message,
+                    timestamp: new Date() // Include a timestamp for when the message was sent
+                });
+
+                // On successful submission, update the status message and clear the form
+                formStatusMessage.classList.remove('info');
+                formStatusMessage.classList.add('success');
+                formStatusMessage.textContent = 'Message sent successfully! Thank you.';
+                contactForm.reset(); // Clear all input fields in the form
+
+            } catch (error) {
+                // If an error occurs during submission, log it and display an error message
+                console.error("Error writing document to Firestore: ", error);
+                formStatusMessage.classList.remove('info');
+                formStatusMessage.classList.add('error');
+                formStatusMessage.textContent = `Failed to send message: ${error.message || 'Unknown error'}. Please try again later.`;
+            } finally {
+                // Ensure the status message is hidden after a set delay, regardless of outcome
+                setTimeout(() => {
+                    formStatusMessage.classList.remove('show');
+                    formStatusMessage.classList.add('hidden');
+                }, 5000); // Message will disappear after 5 seconds
+            }
+        });
+
+    </script>
+</body>
+</html>

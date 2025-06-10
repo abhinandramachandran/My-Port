@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Level Devil</title>
+    <!-- Link to your external CSS file -->
+    <link rel="stylesheet" href="style.css">
+    <!-- Tailwind CSS CDN (included for utility classes, if used in style.css or future additions) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body>
+    <div class="header-container">
+        <h1>Level Devil</h1>
+        <p class="main-description">"Level Devil" is a 2D platformer that might seem simple at first glance, but it's anything but! It's designed to constantly surprise and challenge players by subverting typical platforming expectations.</p>
+        <!-- New element for displaying the current day -->
+        <div id="current-day-display" class="current-day-display"></div>
+    </div>
+
+    <div class="image-gallery">
+        <div class="image-item">
+            <div class="image-rectangle">
+                <img src="C:\Users\rama3\Downloads\Level1.jpg" alt="Level Devil game screenshot - First Section">
+                <button id="level1-btn" class="animated-button pulse-animation"
+                        data-clicked-description="Easy">Play Level 1</button>
+                <div class="image-description-overlay">
+                    <p class="description-content" data-original-description="This image shows the main menu/level selection screen for 'LEVEL DEVIL'. We can infer details about the first level section or the initial levels available to the player.">This image shows the main menu/level selection screen for "LEVEL DEVIL". We can infer details about the first level section or the initial levels available to the player.</p>
+                </div>
+            </div>
+        </div>
+        <div class="image-item">
+            <div class="image-rectangle">
+                <img src="C:\Users\rama3\Downloads\Level2.jpg" alt="Level Devil game screenshot - Second Section">
+                <button id="level2-btn" class="animated-button bounce-animation"
+                        data-clicked-description="Medium">Play Level 2</button>
+                <div class="image-description-overlay">
+                    <p class="description-content" data-original-description="This image is a level selection screen for 'LEVEL DEVIL-er' (potentially a different game mode or world), indicating what appears to be the second level section or a distinct part of the map.">This image is a level selection screen for "LEVEL DEVIL-er" (potentially a different game mode or world), indicating what appears to be the second level section or a distinct part of the map.</p>
+                </div>
+            </div>
+        </div>
+        <div class="image-item">
+            <div class="image-rectangle">
+                <img src="C:\Users\rama3\Downloads\Level3.jpg" alt="Level Devil game screenshot - Third Section">
+                <button id="level3-btn" class="animated-button float-animation"
+                        data-clicked-description="Hard">Play Level 3</button>
+                <div class="image-description-overlay">
+                    <p class="description-content" data-original-description="This image, displaying 'LEVEL DEVIL-est', appears to be the third and potentially final or most challenging level section/world of the game. The suffix '-est' often denotes a superlative, reinforcing the idea that this is the ultimate challenge.">This image, displaying "LEVEL DEVIL-est", appears to be the third and potentially final or most challenging level section/world of the game. The suffix "-est" often denotes a superlative, reinforcing the idea that this is the ultimate challenge.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Link to your external JavaScript file -->
+    <script src="script.js"></script>
+</body>
+</html>
